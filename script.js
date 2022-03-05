@@ -1,23 +1,82 @@
+//declare gobal vars
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
-canvas.width = 800;
-canvas.height = 450;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+let particleArray = [];
 
-const image1 = new Image();
-image1.src = 'bryant.jpg';
+//handle mouse
+let mouse = {
+    x: null,
+    y: null,
+    radius: 150
+}
 
-image1.addEventListener('load', () => {
-    ctx.drawImage(image1, 0, 0, canvas.width, canvas.height);
-    const scannedImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    console.log(scannedImage);
-    const scannedData = scannedImage.data;
-    for(let i = 0; i < scannedData.length; i += 4) {
-        const total = scannedData[i] + scannedData[i + 1] + scannedData[i + 2];
-        const averageColorValue = total/3;
-        scannedData[i] = averageColorValue ;
-        scannedData[i + 1] = averageColorValue ;
-        scannedData[i + 2] = averageColorValue ;
-    }
-    scannedImage.data = scannedData;
-    ctx.putImageData(scannedImage, 0, 0);
+window.addEventListener('mousemove', function(event){
+    mouse.x = event.x;
+    mouse.y = event.y;
+    // console.log(mouse.x, mouse.y);
 })
+
+ctx.fillStyle = 'white';
+ctx.font = '30px Verdana';
+ctx.fillText('A', 0, 30);
+const data = ctx.getImageData(0, 0, 100, 100);
+
+//create particles
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 3; 
+        this.baseX = this.x
+        this.baseY = this.y
+        this.density = (Math.random() * 30) + 1;
+    }
+
+    draw() {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+        ctx.closePath();
+        ctx.fill()
+    }
+    //calculate distace bewteen too points
+    update() {
+        let dx = mouse.x - this.x;
+        let dy = mouse.y - this.y;
+        let distance = Math.sqrt(dx * dx + dy * dy)
+        let forceDirectionX = dx / distance;
+        let forceDirectionY = dy / distance;
+        if(distance < 300) {
+            this.x += forceDirectionX;
+            this.y += forceDirectionY;
+        }else{
+            this.size = 3; 
+        }
+    }
+}
+//fill particleArray with objects
+function init() {
+    particleArray = [];
+    for(let i = 0; i < 1000; i++) {
+        let x = Math.random() * canvas.height;
+        let y = Math.random() * canvas.width;
+        particleArray.push(new Particle(x, y))
+    }
+//     particleArray.push(new Particle(50, 50))
+ }
+
+init();
+console.log(particleArray)
+
+//redraw canvas every frame
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particleArray.length; i++) {
+        particleArray[i].draw();
+        particleArray[i].update();
+    }
+    requestAnimationFrame(animate)
+}
+animate()
